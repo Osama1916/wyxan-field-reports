@@ -1,0 +1,13 @@
+node_modules/
+dist/
+data/*.sqlite
+data/*.sqlite-*
+uploads/*
+!uploads/.gitkeep
+tmp/*
+!tmp/.gitkeep
+.env
+*.log
+sample*.png
+oversize.png
+
