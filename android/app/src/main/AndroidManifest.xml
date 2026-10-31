@@ -1,6 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Declared so launchCamera can use the device camera; runtime grant required. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Gallery on API ≤ 32; Android 13+ uses the system Photo Picker (no permission). -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
       android:name=".MainApplication"

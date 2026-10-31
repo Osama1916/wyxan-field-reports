@@ -1,5 +1,5 @@
 /**
- * Local durable SQLite storage for FieldReports (Phase 2).
+ * Local durable SQLite storage for FieldReports.
  * SQLite is the source of truth for locally created reports.
  */
 
@@ -21,6 +21,17 @@ export {
 } from './nativeRuntimeCheck';
 export {resetDatabaseStartup, startDatabase} from './startup';
 export {createLocalReport} from './createLocalReport';
+export {
+  clearReportDraft,
+  DRAFT_SINGLETON_ID,
+  getReportDraft,
+  listDraftPhotoLocalUris,
+  replaceDraftPhotos,
+  upsertDraftDescription,
+  type DraftPhotoInput,
+  type DraftPhotoRow,
+  type ReportDraft,
+} from './draftRepository';
 export {
   DatabaseError,
   formatDatabaseErrorForDisplay,
@@ -47,10 +58,12 @@ export {
   type RecoverStaleJobsResult,
 } from './recoverStaleJobs';
 export {
+  deleteAllReports,
   deleteReport,
   getReportById,
   getReportByIdempotencyKey,
   getReportWithDetails,
+  listAllPhotoLocalUris,
   listReports,
   updateReport,
 } from './reportsRepository';

@@ -16,9 +16,18 @@ import {insertUploadJob} from './uploadJobsRepository';
  * The provided idempotencyKey is stored once and must not be regenerated
  * on later upload retries.
  */
+export type CreateLocalReportOptions = {
+  /**
+   * When true, clears the unsaved compose draft in the same transaction as the
+   * new report so Save cannot leave a stale draft after a successful create.
+   */
+  clearDraft?: boolean;
+};
+
 export async function createLocalReport(
   db: SqlDatabase,
   input: CreateLocalReportInput,
+  options?: CreateLocalReportOptions,
 ): Promise<LocalReportWithPhotos> {
   const description = input.description.trim();
   if (!description) {
@@ -70,6 +79,12 @@ export async function createLocalReport(
       }
 
       await insertUploadJob(tx, id, {nextAttemptAt: timestamp});
+
+      if (options?.clearDraft) {
+        await tx.execute('DELETE FROM report_draft_photos');
+        await tx.execute('DELETE FROM report_drafts');
+      }
+
       return id;
     });
 

@@ -50,6 +50,8 @@ npm start
 
 It does **not** change chaos simulation settings.
 
+This endpoint only affects the **backend**. It does not touch the mobile app’s local SQLite (saved reports, upload jobs, or unsaved drafts). The app’s Settings → Reset all reports calls this API first, then wipes local data separately — see the root [`README.md`](../README.md) deletion/reset section.
+
 ## API
 
 ### `GET /health`

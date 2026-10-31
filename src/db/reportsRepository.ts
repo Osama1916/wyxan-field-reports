@@ -4,7 +4,6 @@ import {nowIso} from './time';
 import type {
   LocalReport,
   LocalReportWithPhotos,
-  SqlDatabase,
   SqlExecutor,
   UpdateReportInput,
 } from './types';
@@ -170,9 +169,10 @@ export async function updateReport(
 /**
  * Deletes a local report. Cascades to photos and upload_jobs via FK.
  * Do not call this merely because an upload attempt failed.
+ * Prefer deleteLocalReport() for status checks and photo file cleanup.
  */
 export async function deleteReport(
-  db: SqlDatabase,
+  db: SqlExecutor,
   id: number,
 ): Promise<boolean> {
   try {
@@ -180,5 +180,40 @@ export async function deleteReport(
     return result.rowsAffected > 0;
   } catch (error) {
     throw wrapDatabaseError(error, `Failed to delete report ${id}`);
+  }
+}
+
+/**
+ * Lists every local photo URI currently stored (for file cleanup before wipe).
+ */
+export async function listAllPhotoLocalUris(
+  db: SqlExecutor,
+): Promise<string[]> {
+  try {
+    const result = await db.execute(
+      'SELECT local_uri FROM report_photos ORDER BY id ASC',
+    );
+    return result.rows.map(row => String(row.local_uri));
+  } catch (error) {
+    throw wrapDatabaseError(error, 'Failed to list local photo URIs');
+  }
+}
+
+/**
+ * Deletes every local report. Cascades to photos and upload_jobs.
+ * Does not touch schema_migrations or other non-report tables.
+ */
+export async function deleteAllReports(
+  db: SqlExecutor,
+): Promise<{deletedReports: number}> {
+  try {
+    const countResult = await db.execute(
+      'SELECT COUNT(*) AS count FROM reports',
+    );
+    const deletedReports = Number(countResult.rows[0]?.count ?? 0);
+    await db.execute('DELETE FROM reports');
+    return {deletedReports};
+  } catch (error) {
+    throw wrapDatabaseError(error, 'Failed to delete all local reports');
   }
 }

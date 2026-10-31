@@ -27,7 +27,6 @@ export async function runChaos(req: Request): Promise<ChaosOutcome> {
 
   if (chaos.hang) {
     cleanupTempFiles(files);
-    console.log('Chaos: hanging request (no response will be sent)');
     return 'hang';
   }
 

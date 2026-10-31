@@ -1,11 +1,10 @@
 /**
  * FieldReports app entry.
- * Cold-starts native SQLite once per process, then renders the main UI.
+ * Cold-starts native SQLite once per process, then renders Create Report UI.
  *
  * @format
  */
 
-import {NewAppScreen} from '@react-native/new-app-screen';
 import {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
@@ -18,16 +17,27 @@ import {
 } from 'react-native';
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import {formatDatabaseErrorForDisplay} from './src/db/errors';
 import {verifyNativeDatabaseRuntime} from './src/db/nativeRuntimeCheck';
 import {resetDatabaseStartup, startDatabase} from './src/db/startup';
+import {CreateReportScreen} from './src/screens/CreateReportScreen';
+import {SavedReportsScreen} from './src/screens/SavedReportsScreen';
+import {SettingsScreen} from './src/screens/SettingsScreen';
+import {
+  kickUploadWorker,
+  startUploadNetworkListener,
+} from './src/upload';
 
 type StartupState =
   | {status: 'initializing'}
   | {status: 'ready'}
   | {status: 'error'; message: string};
+
+type AppScreen =
+  | {name: 'create'; lastSavedId: number | null}
+  | {name: 'saved'; highlightReportId: number | null; refreshToken: number}
+  | {name: 'settings'; returnTo: 'create' | 'saved'};
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -40,19 +50,13 @@ function App() {
     try {
       const init = await startDatabase();
       if (__DEV__) {
-        const verification = await verifyNativeDatabaseRuntime(init);
-        console.info(
-          '[FieldReports] Database initialization completed.',
-          `Migration version: ${verification.latestMigrationVersion}`,
-          `(applied: [${verification.migrationVersions.join(', ')}]).`,
-          'Successful SELECT query against reports and upload_jobs.',
-        );
+        // Fail fast in development if the native SQLite path is not live.
+        await verifyNativeDatabaseRuntime(init);
       }
+      // Durable queue: process any pending / recovered jobs after cold start.
+      void kickUploadWorker();
       setStartup({status: 'ready'});
     } catch (error) {
-      if (__DEV__) {
-        console.error('[FieldReports] database startup failed', error);
-      }
       setStartup({
         status: 'error',
         message: formatDatabaseErrorForDisplay(error),
@@ -63,6 +67,11 @@ function App() {
   useEffect(() => {
     void runStartup();
   }, [runStartup]);
+
+  useEffect(() => {
+    // Network regain kicks the same single-flight worker (no extra workers).
+    return startUploadNetworkListener();
+  }, []);
 
   const onRetry = useCallback(async () => {
     await resetDatabaseStartup();
@@ -117,22 +126,75 @@ function StartupError({
 }
 
 function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  const [screen, setScreen] = useState<AppScreen>({
+    name: 'create',
+    lastSavedId: null,
+  });
+  const [savedHighlightId, setSavedHighlightId] = useState<number | null>(null);
+  const [savedRefreshToken, setSavedRefreshToken] = useState(0);
+
+  if (screen.name === 'settings') {
+    return (
+      <SettingsScreen
+        onBack={() => {
+          if (screen.returnTo === 'saved') {
+            setScreen({
+              name: 'saved',
+              highlightReportId: savedHighlightId,
+              refreshToken: savedRefreshToken || Date.now(),
+            });
+            return;
+          }
+          setScreen({name: 'create', lastSavedId: savedHighlightId});
+        }}
+      />
+    );
+  }
+
+  if (screen.name === 'saved') {
+    return (
+      <SavedReportsScreen
+        highlightReportId={screen.highlightReportId}
+        onRefreshRequest={screen.refreshToken}
+        onBack={() =>
+          setScreen({
+            name: 'create',
+            lastSavedId: screen.highlightReportId,
+          })
+        }
+        onOpenSettings={() => {
+          setSavedHighlightId(screen.highlightReportId);
+          setSavedRefreshToken(screen.refreshToken);
+          setScreen({name: 'settings', returnTo: 'saved'});
+        }}
+      />
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
+    <CreateReportScreen
+      onSaved={reportId =>
+        setScreen({
+          name: 'saved',
+          highlightReportId: reportId,
+          refreshToken: Date.now(),
+        })
+      }
+      onViewSaved={() =>
+        setScreen({
+          name: 'saved',
+          highlightReportId: screen.lastSavedId,
+          refreshToken: Date.now(),
+        })
+      }
+      onOpenSettings={() =>
+        setScreen({name: 'settings', returnTo: 'create'})
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',

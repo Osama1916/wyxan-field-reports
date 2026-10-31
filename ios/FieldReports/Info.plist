@@ -36,6 +36,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string>Field Reports needs the camera to attach photos to a report.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Field Reports needs your photo library to attach images to a report.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

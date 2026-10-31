@@ -80,6 +80,38 @@ CREATE INDEX IF NOT EXISTS idx_upload_jobs_state_next_attempt
 CREATE INDEX IF NOT EXISTS idx_upload_jobs_locked_at ON upload_jobs(locked_at);
 `.trim(),
   },
+  {
+    version: 2,
+    name: 'unsaved_report_drafts',
+    sql: `
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS report_drafts (
+  id INTEGER PRIMARY KEY NOT NULL
+    CHECK (id = 1),
+  description TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS report_draft_photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  selection_id TEXT NOT NULL,
+  local_uri TEXT NOT NULL,
+  sort_order INTEGER NOT NULL
+    CHECK (sort_order >= 0),
+  byte_size INTEGER NOT NULL
+    CHECK (byte_size >= 0),
+  mime_type TEXT NOT NULL,
+  file_name TEXT,
+  fingerprint TEXT NOT NULL,
+  CONSTRAINT report_draft_photos_selection_unique UNIQUE (selection_id),
+  CONSTRAINT report_draft_photos_sort_unique UNIQUE (sort_order)
+);
+
+CREATE INDEX IF NOT EXISTS idx_report_draft_photos_sort
+  ON report_draft_photos(sort_order);
+`.trim(),
+  },
 ];
 
 const BOOTSTRAP_SQL = `

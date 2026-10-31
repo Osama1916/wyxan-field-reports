@@ -84,6 +84,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Release default: no cleartext. Debug overrides below for local API.
+        manifestPlaceholders = [usesCleartextTraffic: "false"]
     }
     signingConfigs {
         debug {
@@ -96,6 +98,8 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            // Android emulator talks to host backend over plain HTTP (10.0.2.2).
+            manifestPlaceholders = [usesCleartextTraffic: "true"]
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -103,6 +107,7 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
         }
     }
 }

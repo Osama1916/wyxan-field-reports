@@ -22,6 +22,34 @@ jest.mock('../src/db/nativeRuntimeCheck', () => ({
   })),
 }));
 
+jest.mock('../src/screens/CreateReportScreen', () => ({
+  CreateReportScreen: () => null,
+}));
+
+jest.mock('../src/screens/SavedReportsScreen', () => ({
+  SavedReportsScreen: () => null,
+}));
+
+jest.mock('../src/screens/SettingsScreen', () => ({
+  SettingsScreen: () => null,
+}));
+
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {
+    addEventListener: jest.fn(() => jest.fn()),
+    fetch: jest.fn(async () => ({
+      isConnected: true,
+      isInternetReachable: true,
+    })),
+  },
+}));
+
+jest.mock('../src/upload', () => ({
+  kickUploadWorker: jest.fn(async () => undefined),
+  startUploadNetworkListener: jest.fn(() => jest.fn()),
+}));
+
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import App from '../App';
