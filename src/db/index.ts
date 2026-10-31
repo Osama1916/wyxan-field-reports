@@ -15,9 +15,15 @@ export type {
   InitializeDatabaseOptions,
   InitializeDatabaseResult,
 } from './database';
+export {
+  verifyNativeDatabaseRuntime,
+  type NativeDatabaseVerification,
+} from './nativeRuntimeCheck';
+export {resetDatabaseStartup, startDatabase} from './startup';
 export {createLocalReport} from './createLocalReport';
 export {
   DatabaseError,
+  formatDatabaseErrorForDisplay,
   isUniqueConstraintError,
   UniqueConstraintError,
   wrapDatabaseError,

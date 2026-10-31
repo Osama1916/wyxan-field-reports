@@ -50,7 +50,9 @@ export async function initializeDatabase(
       options.database ??
       openOpSqliteDatabase({
         name: options.name ?? DEFAULT_DATABASE_NAME,
-        location: options.location,
+        ...(options.location != null && options.location !== ''
+          ? {location: options.location}
+          : {}),
       });
 
     await database.execute('PRAGMA foreign_keys = ON');

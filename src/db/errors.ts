@@ -41,6 +41,45 @@ export function wrapDatabaseError(
   return new DatabaseError(`${context}: ${message}`, {cause: error});
 }
 
+/**
+ * User-facing database error text.
+ * Production: short, non-sensitive message only.
+ * Development: original message, cause chain, and stacks for diagnosis.
+ */
+export function formatDatabaseErrorForDisplay(error: unknown): string {
+  if (!__DEV__) {
+    return 'Local database failed to initialize.';
+  }
+
+  const parts: string[] = [];
+  let current: unknown = error;
+  let depth = 0;
+
+  while (current != null && depth < 5) {
+    if (current instanceof Error) {
+      const header =
+        depth === 0
+          ? current.message
+          : `Caused by: ${current.name}: ${current.message}`;
+      parts.push(header);
+      if (typeof current.stack === 'string' && current.stack.length > 0) {
+        parts.push(current.stack);
+      }
+      current =
+        'cause' in current ? (current as {cause?: unknown}).cause : undefined;
+    } else {
+      parts.push(String(current));
+      break;
+    }
+    depth += 1;
+  }
+
+  if (parts.length === 0) {
+    return 'Local database failed to initialize.';
+  }
+  return parts.join('\n\n');
+}
+
 export function isUniqueConstraintError(error: unknown): boolean {
   if (error instanceof UniqueConstraintError) {
     return true;

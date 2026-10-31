@@ -102,15 +102,21 @@ export type OpenLocalDatabaseOptions = {
 
 /**
  * Opens the on-device SQLite database via @op-engineering/op-sqlite.
+ *
+ * Important: do not pass `location: undefined`. op-sqlite's native open() uses
+ * JSI `hasProperty("location")` then `.asString()` — a present-but-undefined
+ * key throws before sqlite3_open (no SQLite logcat line).
  */
 export function openOpSqliteDatabase(
   options: OpenLocalDatabaseOptions = {},
 ): SqlDatabase {
   try {
-    const db = open({
-      name: options.name ?? 'fieldreports.sqlite',
-      location: options.location,
-    });
+    const name = options.name ?? 'fieldreports.sqlite';
+    // Omit unset location so native code uses the default Android/iOS path.
+    const db =
+      options.location != null && options.location !== ''
+        ? open({name, location: options.location})
+        : open({name});
     return wrapOpSqliteDatabase(db);
   } catch (error) {
     throw wrapDatabaseError(error, 'Failed to open SQLite database');
